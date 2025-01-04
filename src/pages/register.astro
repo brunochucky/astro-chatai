@@ -1,0 +1,145 @@
+---
+// src/pages/register.astro
+export const prerender = false;
+import Layout from "../layouts/Layout.astro";
+import logoSrc from "../assets/logo.webp";
+---
+
+<Layout title="Register">
+  <div
+    class="min-h-screen flex flex-col items-center justify-center bg-gray-100 px-6"
+  >
+    <!-- Logo -->
+    <div class="mb-6">
+      <img src={logoSrc.src} alt="Logo" class="h-20 w-auto" />
+    </div>
+    <div class="max-w-md w-full bg-white rounded-lg shadow-lg p-8">
+      <h1 class="text-2xl font-bold text-gray-800 text-center mb-4">
+        Cadastre-se
+      </h1>
+      <p class="text-sm text-gray-600 text-center mb-6">
+        Já tem uma conta?
+        <a href="/login" class="text-blue-500 hover:underline font-medium"
+          >Entrar</a
+        >
+      </p>
+      <form id="registerForm" class="space-y-6">
+        <!-- Nome -->
+        <div>
+          <label for="name" class="block text-sm font-medium text-gray-700"
+            >Nome</label
+          >
+          <input
+            type="text"
+            name="name"
+            id="name"
+            required
+            class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+            placeholder="Digite seu nome"
+          />
+        </div>
+        <!-- Email -->
+        <div>
+          <label for="email" class="block text-sm font-medium text-gray-700"
+            >Email</label
+          >
+          <input
+            type="email"
+            name="email"
+            id="email"
+            required
+            class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+            placeholder="Digite seu email"
+          />
+        </div>
+        <!-- Senha -->
+        <div>
+          <label for="password" class="block text-sm font-medium text-gray-700"
+            >Senha</label
+          >
+          <input
+            type="password"
+            name="password"
+            id="password"
+            required
+            class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+            placeholder="Crie uma senha"
+          />
+        </div>
+        <!-- Botão de Registro -->
+        <div>
+          <button
+            type="submit"
+            id="registerButton"
+            class="w-full bg-blue-600 text-white py-2 px-4 rounded-md shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+          >
+            Cadastrar
+          </button>
+        </div>
+        <!-- Mensagens -->
+        <p
+          id="errorMessage"
+          class="text-sm text-red-600 text-center mt-2"
+          style="display: none;"
+        >
+          Ocorreu um erro. Tente novamente.
+        </p>
+        <p
+          id="loadingMessage"
+          class="text-sm text-gray-500 text-center mt-2"
+          style="display: none;"
+        >
+          Registrando...
+        </p>
+      </form>
+    </div>
+  </div>
+</Layout>
+
+<script>
+  const registerForm = document.getElementById("registerForm");
+  const registerButton = document.getElementById("registerButton");
+  const errorMessage = document.getElementById("errorMessage");
+  const loadingMessage = document.getElementById("loadingMessage");
+
+  registerForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+
+    // Extract values from form inputs
+    const name = document.getElementById("name").value.trim();
+    const email = document.getElementById("email").value.trim();
+    const password = document.getElementById("password").value.trim();
+
+    registerButton.disabled = true;
+    loadingMessage.style.display = "block";
+    errorMessage.style.display = "none";
+
+    try {
+      // Send data as JSON payload
+      const payload = JSON.stringify({ name, email, password });
+
+      const response = await fetch("/api/auth/register", {
+        method: "POST",
+        body: payload,
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (response.ok) {
+        window.location.href = "/login";
+      } else {
+        const errorMessageText = await response.text();
+        errorMessage.textContent = errorMessageText;
+        errorMessage.style.display = "block";
+      }
+    } catch (error) {
+      console.error("Registration Error:", error);
+      errorMessage.textContent = "An unexpected error occurred.";
+      errorMessage.style.display = "block";
+    } finally {
+      registerButton.disabled = false;
+      loadingMessage.style.display = "none";
+    }
+  });
+</script>
