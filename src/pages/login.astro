@@ -3,6 +3,7 @@ import { app } from "../firebase/server";
 import { getAuth } from "firebase-admin/auth";
 import Layout from "../layouts/Layout.astro";
 import logoSrc from "../assets/logo.webp";
+import LoginForm from "../components/LoginForm.vue";
 
 /* Check if the user is authenticated */
 const auth = getAuth(app);
@@ -12,6 +13,17 @@ if (Astro.cookies.has("__session")) {
   if (decodedCookie) {
     return Astro.redirect("/dashboard");
   }
+}
+
+// Capturar o código da query string
+const urlParams = new URLSearchParams(Astro.request.url.split("?")[1]);
+const successCode = urlParams.get("success");
+
+// Definir a mensagem com base no código
+let successMessage = "";
+if (successCode === "register") {
+  successMessage =
+    "Sua conta foi criada com sucesso! Faça login para continuar.";
 }
 ---
 
@@ -23,91 +35,26 @@ if (Astro.cookies.has("__session")) {
     <div class="mb-6">
       <img src={logoSrc.src} alt="Logo" class="h-20 w-auto" />
     </div>
+
+    <!-- Mensagem de Sucesso -->
+    {
+      successMessage && (
+        <div class="mb-4 w-full max-w-md bg-green-100 border-l-4 border-green-500 text-green-700 p-4 rounded-lg">
+          <p>{successMessage}</p>
+        </div>
+      )
+    }
+
+    <!-- Formulário -->
     <div class="max-w-md w-full bg-white rounded-lg shadow-lg p-8">
       <h1 class="text-2xl font-bold text-gray-800 text-center mb-4">Entrar</h1>
       <p class="text-sm text-gray-600 text-center mb-6">
         Não possui uma conta?
-        <a href="/register" class="text-blue-500 hover:underline font-medium"
-          >Criar conta</a
-        >
+        <a href="/register" class="text-blue-500 hover:underline font-medium">
+          Criar conta
+        </a>
       </p>
-      <form id="loginForm" class="space-y-6">
-        <!-- Email -->
-        <div>
-          <label for="email" class="block text-sm font-medium text-gray-700"
-            >Email</label
-          >
-          <input
-            type="email"
-            name="email"
-            id="email"
-            class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-            placeholder="Digite seu e-mail"
-          />
-        </div>
-        <!-- Password -->
-        <div>
-          <label for="password" class="block text-sm font-medium text-gray-700"
-            >Senha</label
-          >
-          <input
-            type="password"
-            name="password"
-            id="password"
-            class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-            placeholder="Digite sua senha"
-          />
-        </div>
-        <!-- Button -->
-        <div>
-          <button
-            type="submit"
-            class="w-full bg-blue-600 text-white py-2 px-4 rounded-md shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-          >
-            Entrar
-          </button>
-        </div>
-      </form>
+      <LoginForm client:visible />
     </div>
   </div>
 </Layout>
-<script>
-  import {
-    getAuth,
-    inMemoryPersistence,
-    signInWithEmailAndPassword,
-  } from "firebase/auth";
-  import { app } from "../firebase/client";
-
-  const auth = getAuth(app);
-  // This will prevent the browser from storing session data
-  auth.setPersistence(inMemoryPersistence);
-
-  const form = document.querySelector("#loginForm") as HTMLFormElement;
-  form.addEventListener("submit", async (e) => {
-    e.preventDefault();
-    const formData = new FormData(form);
-    const email = formData.get("email")?.toString();
-    const password = formData.get("password")?.toString();
-
-    if (!email || !password) {
-      return;
-    }
-    const userCredential = await signInWithEmailAndPassword(
-      auth,
-      email,
-      password
-    );
-    const idToken = await userCredential.user.getIdToken();
-    const response = await fetch("/api/auth/signin", {
-      method: "GET",
-      headers: {
-        Authorization: `Bearer ${idToken}`,
-      },
-    });
-
-    if (response.redirected) {
-      window.location.assign(response.url);
-    }
-  });
-</script>
